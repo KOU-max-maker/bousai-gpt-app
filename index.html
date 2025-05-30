@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI災害シナリオ生成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        function App() {
+            const [screen, setScreen] = React.useState('input');
+            const [profile, setProfile] = React.useState({
+                name: '',
+                age: '',
+                address: '',
+                currentLocation: '',
+                activity: '',
+                family: []
+            });
+            const [scenario, setScenario] = React.useState('');
+            const [quiz, setQuiz] = React.useState([]);
+            const [currentQuestion, setCurrentQuestion] = React.useState(0);
+            const [answers, setAnswers] = React.useState([]);
+
+            // 避難場所データ
+            const evacuationSites = {
+                '横浜駅': [
+                    { name: '横浜駅西口広場', distance: '徒歩1分', type: '一時避難場所' },
+                    { name: 'ランドマークタワー', distance: '徒歩5分', type: '津波避難ビル' }
+                ],
+                'オフィス': [
+                    { name: '最寄りの公園', distance: '徒歩3分', type: '一時避難場所' },
+                    { name: 'オフィスビル屋上', distance: '徒歩1分', type: '津波避難場所' }
+                ],
+                '自宅': [
+                    { name: '近隣公園', distance: '徒歩5分', type: '一時避難場所' },
+                    { name: '地域小学校', distance: '徒歩10分', type: '指定避難所' }
+                ]
+            };
+
+            // 入力画面
+            if (screen === 'input') {
+                return (
+                    <div className="max-w-3xl mx-auto p-6">
+                        <h1 className="text-4xl font-bold text-center mb-8 text-blue-800">
+                            🤖 AI災害シナリオ生成
+                        </h1>
+                        
+                        <div className="bg-white p-8 rounded-lg shadow-lg">
+                            <h2 className="text-2xl font-bold mb-6">プロフィール入力</h2>
+                            
+                            <div className="grid md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">お名前</label>
+                                    <input
+                                        type="text"
+                                        value={profile.name}
+                                        onChange={(e) => setProfile({...profile, name: e.target.value})}
+                                        placeholder="山田太郎"
+                                        className="w-full p-3 border border-gray-300 rounded-lg"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">年齢</label>
+                                    <input
+                                        type="text"
+                                        value={profile.age}
+                                        onChange={(e) => setProfile({...profile, age: e.target.value})}
+                                        placeholder="35"
+                                        className="w-full p-3 border border-gray-300 rounded-lg"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">住所</label>
+                                    <input
+                                        type="text"
+                                        value={profile.address}
+                                        onChange={(e) => setProfile({...profile, address: e.target.value})}
+                                        placeholder="横浜市中区本町1-1-1"
+                                        className="w-full p-3 border border-gray-300 rounded-lg"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">現在いる場所</label>
+                                    <select
+                                        value={profile.currentLocation}
+                                        onChange={(e) => setProfile({...profile, currentLocation: e.target.value})}
+                                        className="w-full p-3 border border-gray-300 rounded-lg"
+                                    >
+                                        <option value="">選択してください</option>
+                                        <option value="横浜駅">横浜駅</option>
+                                        <option value="オフィス">オフィス</option>
+                                        <option value="自宅">自宅</option>
+                                        <option value="ショッピングモール">ショッピングモール</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium mb-2">現在の活動</label>
+                                <select
+                                    value={profile.activity}
+                                    onChange={(e) => setProfile({...profile, activity: e.target.value})}
+                                    className="w-full p-3 border border-gray-300 rounded-lg"
+                                >
+                                    <option value="">選択してください</option>
+                                    <option value="仕事中">仕事中</option>
+                                    <option value="会議中">会議中</option>
+                                    <option value="移動中">移動中</option>
+                                    <option value="買い物中">買い物中</option>
+                                    <option value="食事中">食事中</option>
+                                    <option value="休憩中">休憩中</option>
+                                </select>
+                            </div>
+
+                            {/* 家族追加 */}
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className="block text-sm font-medium">家族構成</label>
+                                    <button
+                                        onClick={() => setProfile({
+                                            ...profile, 
+                                            family: [...profile.family, {name: '', age: '', relation: ''}]
+                                        })}
+                                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                        + 追加
+                                    </button>
+                                </div>
+                                {profile.family.map((member, index) => (
+                                    <div key={index} className="grid grid-cols-3 gap-2 mb-2">
+                                        <input
+                                            type="text"
+                                            placeholder="名前"
+                                            value={member.name}
+                                            onChange={(e) => {
+                                                const newFamily = [...profile.family];
+                                                newFamily[index].name = e.target.value;
+                                                setProfile({...profile, family: newFamily});
+                                            }}
+                                            className="p-2 border border-gray-300 rounded"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="年齢"
+                                            value={member.age}
+                                            onChange={(e) => {
+                                                const newFamily = [...profile.family];
+                                                newFamily[index].age = e.target.value;
+                                                setProfile({...profile, family: newFamily});
+                                            }}
+                                            className="p-2 border border-gray-300 rounded"
+                                        />
+                                        <select
+                                            value={member.relation}
+                                            onChange={(e) => {
+                                                const newFamily = [...profile.family];
+                                                newFamily[index].relation = e.target.value;
+                                                setProfile({...profile, family: newFamily});
+                                            }}
+                                            className="p-2 border border-gray-300 rounded"
+                                        >
+                                            <option value="">続柄</option>
+                                            <option value="配偶者">配偶者</option>
+                                            <option value="子供">子供</option>
+                                            <option value="親">親</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-center mb-4">
+                                <button
+                                    onClick={() => {
+                                        setProfile({
+                                            name: '山田太郎',
+                                            age: '35',
+                                            address: '横浜市中区本町1-1-1',
+                                            currentLocation: '横浜駅',
+                                            activity: '仕事中',
+                                            family: [{name: '山田花子', age: '32', relation: '配偶者'}]
+                                        });
+                                    }}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded mr-4"
+                                >
+                                    📝 サンプル入力
+                                </button>
+                            </div>
+                            
+                            <button
+                                onClick={() => {
+                                    // シナリオ生成
+                                    const now = new Date();
+                                    const disasters = ['地震', '津波', '台風'];
+                                    const disaster = disasters[Math.floor(Math.random() * disasters.length)];
+                                    
+                                    const newScenario = `【緊急事態発生】
+
+${now.getMonth() + 1}月${now.getDate()}日 ${now.getHours()}:${now.getMinutes()}
+
+あなた（${profile.name}さん、${profile.age}歳）は現在「${profile.currentLocation}」で「${profile.activity}」をしています。
+
+突然、${disaster}が発生しました！
+
+周囲は混乱状態です。この状況で、あなたはどのような行動を取りますか？`;
+
+                                    setScenario(newScenario);
+
+                                    // クイズ生成
+                                    const sites = evacuationSites[profile.currentLocation] || evacuationSites['自宅'];
+                                    const bestSite = sites[0];
+
+                                    const newQuiz = [
+                                        {
+                                            question: `${profile.currentLocation}で${profile.activity}中に${disaster}が発生した場合、最初に取るべき行動は？`,
+                                            options: [
+                                                '慌てて外に飛び出す',
+                                                'まず身の安全を確保する',
+                                                'すぐに家族に電話する',
+                                                '様子を見る'
+                                            ],
+                                            correct: 1,
+                                            explanation: `${disaster}発生時は、まず自分の身の安全を確保することが最優先です。`
+                                        },
+                                        {
+                                            question: `${profile.currentLocation}から避難する場合、最も適切な避難場所は？`,
+                                            options: [
+                                                bestSite.name,
+                                                '遠くの安全な場所',
+                                                '地下街',
+                                                '車の中'
+                                            ],
+                                            correct: 0,
+                                            explanation: `${profile.currentLocation}からは「${bestSite.name}」が最適です（${bestSite.distance}、${bestSite.type}）。`
+                                        },
+                                        {
+                                            question: `家族との連絡について最も適切な方法は？`,
+                                            options: [
+                                                '何度も電話をかける',
+                                                '災害用伝言板を活用する',
+                                                '直接会いに行く',
+                                                'SNSで呼びかける'
+                                            ],
+                                            correct: 1,
+                                            explanation: '災害時は電話が繋がりにくくなるため、災害用伝言板の活用が効果的です。'
+                                        }
+                                    ];
+
+                                    setQuiz(newQuiz);
+                                    setScreen('scenario');
+                                }}
+                                disabled={!profile.name || !profile.currentLocation || !profile.activity}
+                                className="w-full bg-red-600 text-white py-4 rounded-lg hover:bg-red-700 disabled:bg-gray-300 text-lg font-bold"
+                            >
+                                🚨 災害シナリオを生成
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // シナリオ表示画面
+            if (screen === 'scenario') {
+                const sites = evacuationSites[profile.currentLocation] || evacuationSites['自宅'];
+
+                return (
+                    <div className="max-w-4xl mx-auto p-6">
+                        <button
+                            onClick={() => setScreen('input')}
+                            className="mb-6 text-blue-600 hover:text-blue-800"
+                        >
+                            ← 戻る
+                        </button>
+                        
+                        <div className="bg-white rounded-lg shadow-lg p-8">
+                            <h1 className="text-3xl font-bold text-center mb-6 text-red-600">
+                                🚨 あなた専用災害シナリオ
+                            </h1>
+                            
+                            <div className="bg-red-50 border-l-4 border-red-500 p-6 mb-6">
+                                <pre className="whitespace-pre-wrap text-lg">{scenario}</pre>
+                            </div>
+                            
+                            <div className="bg-blue-50 p-6 rounded-lg mb-6">
+                                <h3 className="text-lg font-bold text-blue-800 mb-3">
+                                    📍 {profile.currentLocation}周辺の避難場所
+                                </h3>
+                                <div className="space-y-2">
+                                    {sites.map((site, index) => (
+                                        <div key={index} className="flex justify-between items-center p-3 bg-white rounded border">
+                                            <div>
+                                                <span className="font-semibold text-blue-700">{site.name}</span>
+                                                <span className="text-sm text-gray-600 ml-2">({site.type})</span>
+                                            </div>
+                                            <div className="text-blue-600">{site.distance}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="text-center">
+                                <button
+                                    onClick={() => {
+                                        setCurrentQuestion(0);
+                                        setAnswers([]);
+                                        setScreen('quiz');
+                                    }}
+                                    className="bg-red-600 text-white px-8 py-4 rounded-lg hover:bg-red-700 text-lg font-bold"
+                                >
+                                    🎯 個人最適化クイズに挑戦
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // クイズ画面
+            if (screen === 'quiz') {
+                const question = quiz[currentQuestion];
+
+                const handleAnswer = (selectedIndex) => {
+                    const isCorrect = selectedIndex === question.correct;
+                    setAnswers([...answers, { correct: isCorrect, explanation: question.explanation }]);
+                    
+                    if (currentQuestion < quiz.length - 1) {
+                        setCurrentQuestion(currentQuestion + 1);
+                    } else {
+                        setScreen('results');
+                    }
+                };
+
+                return (
+                    <div className="max-w-4xl mx-auto p-6">
+                        <div className="bg-white rounded-lg shadow-lg p-8">
+                            <h2 className="text-2xl font-bold mb-4">
+                                個人最適化クイズ {currentQuestion + 1} / {quiz.length}
+                            </h2>
+                            
+                            <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+                                <div 
+                                    className="bg-red-600 h-2 rounded-full"
+                                    style={{ width: `${((currentQuestion + 1) / quiz.length) * 100}%` }}
+                                ></div>
+                            </div>
+
+                            <h3 className="text-xl font-semibold mb-6">{question.question}</h3>
+                            
+                            <div className="space-y-4">
+                                {question.options.map((option, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => handleAnswer(index)}
+                                        className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-red-600 hover:bg-red-50"
+                                    >
+                                        <span className="font-medium mr-3 text-red-600">
+                                            {String.fromCharCode(65 + index)}.
+                                        </span>
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 結果画面
+            if (screen === 'results') {
+                const score = answers.filter(a => a.correct).length;
+
+                return (
+                    <div className="max-w-4xl mx-auto p-6">
+                        <div className="bg-white rounded-lg shadow-lg p-8">
+                            <h2 className="text-3xl font-bold text-center mb-6">🎉 クイズ完了！</h2>
+                            
+                            <div className="text-center mb-8">
+                                <div className="text-6xl font-bold text-green-600 mb-2">
+                                    {score}/{quiz.length}
+                                </div>
+                                <div className="text-2xl font-semibold text-green-600">
+                                    正答率 {Math.round((score / quiz.length) * 100)}%
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 mb-8">
+                                <h3 className="text-xl font-bold">解答の振り返り</h3>
+                                {answers.map((answer, index) => (
+                                    <div key={index} className="border rounded-lg p-4">
+                                        <div className="flex items-start">
+                                            <span className={`mr-3 text-xl ${answer.correct ? 'text-green-600' : 'text-red-600'}`}>
+                                                {answer.correct ? '✓' : '✗'}
+                                            </span>
+                                            <p className="text-gray-700">{answer.explanation}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-center space-x-4">
+                                <button
+                                    onClick={() => setScreen('input')}
+                                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+                                >
+                                    🔄 新しいシナリオ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
