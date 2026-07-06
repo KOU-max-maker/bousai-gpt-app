@@ -480,6 +480,7 @@ input[type=range]::-moz-range-thumb{
   display:flex;gap:12px;z-index:61;flex-wrap:wrap;justify-content:center;
   animation:riseIn 1.1s .2s both;
 }
+.bgm-frame{position:fixed;left:-9999px;top:0;width:320px;height:180px;border:0}
 .toast{
   position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:300;
   background:rgba(20,14,8,.92);border:1px solid var(--gold);color:#f0e3c4;
@@ -547,9 +548,10 @@ input[type=range]::-moz-range-thumb{
       <div class="fld"><div class="t">封蝋の色</div><div class="opts" id="gSeal"></div></div>
       <div class="fld">
         <div class="t">BGM <small>音楽のURL（任意）</small></div>
-        <input type="text" id="fBgm" placeholder="https://example.com/music.mp3">
+        <input type="text" id="fBgm" placeholder="https://www.youtube.com/watch?v=… または https://…/music.mp3">
         <p style="margin-top:8px;font-size:11.5px;color:var(--tx-dim);line-height:1.9;letter-spacing:.04em">
-          mp3 / m4a / ogg など音源ファイルへの直リンクのみ再生できます（YouTube等のページURLは不可）。開封と同時に、やさしい音量で流れます。</p>
+          YouTubeのURL、または mp3 / m4a 等の音源ファイルへの直リンクが使えます。開封と同時に、やさしい音量で流れます。
+          YouTubeは公式プレイヤーを画面外で鳴らす仕組みのため、動画側で埋め込み再生が許可されている必要があります（広告付き動画では広告音声が先に流れることがあります）。</p>
       </div>
     </section>
 
@@ -1033,19 +1035,85 @@ function applyTheme(d){
 }
 
 /* --- BGM --- */
-let bgmEl = null;
+let bgmEl = null;       // <audio> for direct media links
+let ytFrame = null;     // hidden official YouTube embed
+let pendingYt = null;
+let ytFadeTimer = null;
+
+function parseYouTube(url){
+  try{
+    const u = new URL(url);
+    const host = u.hostname.replace(/^(www\.|m\.|music\.)/,'');
+    let id = '';
+    if (host === 'youtu.be'){
+      id = u.pathname.slice(1).split('/')[0];
+    } else if (host === 'youtube.com' || host === 'youtube-nocookie.com'){
+      if (u.pathname === '/watch') id = u.searchParams.get('v') || '';
+      else {
+        const m = u.pathname.match(/^\/(embed|shorts|live)\/([A-Za-z0-9_-]{6,20})/);
+        if (m) id = m[2];
+      }
+    }
+    if (!/^[A-Za-z0-9_-]{6,20}$/.test(id)) return null;
+    let start = 0;
+    const t = u.searchParams.get('t') || u.searchParams.get('start') || '';
+    if (/^\d+s?$/.test(t)) start = parseInt(t, 10);
+    else if (t){
+      const h = +(t.match(/(\d+)h/)||[0,0])[1], mn = +(t.match(/(\d+)m/)||[0,0])[1], s = +(t.match(/(\d+)s/)||[0,0])[1];
+      start = h*3600 + mn*60 + s;
+    }
+    return {id, start};
+  }catch(e){ return null; }
+}
+function ytCmd(func, args){
+  if (ytFrame && ytFrame.contentWindow)
+    ytFrame.contentWindow.postMessage(JSON.stringify({event:'command', func, args:args||[]}), '*');
+}
 function setupBgm(url){
   stopBgm();
-  bgmEl = null;
-  if (!url || !/^https?:\/\//i.test(url)) return;
+  bgmEl = null; pendingYt = null;
+  if (!url) return;
+  pendingYt = parseYouTube(url);
+  if (pendingYt) return;
+  if (!/^https?:\/\//i.test(url)) return;
   bgmEl = new Audio();
   bgmEl.loop = true;
   bgmEl.preload = 'auto';
   bgmEl.volume = 0;
-  bgmEl.onerror = () => { toast('BGMを読み込めませんでした（音源への直リンクのみ再生できます）'); bgmEl = null; };
+  bgmEl.onerror = () => { toast('BGMを読み込めませんでした（YouTubeのURL、または音源への直リンクが使えます）'); bgmEl = null; };
   bgmEl.src = url;
 }
 function startBgm(){
+  if (pendingYt){
+    ytFrame = document.createElement('iframe');
+    ytFrame.className = 'bgm-frame';
+    ytFrame.setAttribute('allow', 'autoplay; encrypted-media');
+    ytFrame.setAttribute('aria-hidden', 'true');
+    ytFrame.tabIndex = -1;
+    const q = new URLSearchParams({
+      autoplay:1, loop:1, playlist:pendingYt.id,
+      controls:0, disablekb:1, fs:0, iv_load_policy:3, rel:0,
+      playsinline:1, enablejsapi:1, start:pendingYt.start || 0,
+    });
+    if (location.origin.startsWith('http')) q.set('origin', location.origin);
+    ytFrame.src = `https://www.youtube-nocookie.com/embed/${pendingYt.id}?${q.toString()}`;
+    ytFrame.addEventListener('load', () => {
+      if (ytFrame && ytFrame.contentWindow)
+        ytFrame.contentWindow.postMessage(JSON.stringify({event:'listening', id:'tsuzuruBgm', channel:'widget'}), '*');
+      ytCmd('setVolume', [0]);
+      ytCmd('playVideo');
+      if (!Sound.enabled) ytCmd('mute');
+      let v = 0;
+      clearInterval(ytFadeTimer);
+      ytFadeTimer = setInterval(() => {
+        v += 4;
+        ytCmd('setVolume', [Math.min(v, 35)]);
+        if (v >= 35) clearInterval(ytFadeTimer);
+      }, 320);
+    });
+    document.body.appendChild(ytFrame);
+    return;
+  }
   if (!bgmEl) return;
   bgmEl.muted = !Sound.enabled;
   const p = bgmEl.play();
@@ -1063,6 +1131,8 @@ function fadeBgm(target, ms){
   requestAnimationFrame(step);
 }
 function stopBgm(){
+  clearInterval(ytFadeTimer);
+  if (ytFrame){ ytCmd('stopVideo'); ytFrame.remove(); ytFrame = null; }
   if (bgmEl){ try{ bgmEl.pause(); }catch(e){} }
 }
 
@@ -1263,6 +1333,7 @@ function bindReaderUI(){
   $('#btnMute').onclick = () => {
     Sound.enabled = !Sound.enabled;
     if (bgmEl) bgmEl.muted = !Sound.enabled;
+    if (ytFrame) ytCmd(Sound.enabled ? 'unMute' : 'mute');
     $('#btnMute').textContent = Sound.enabled ? '音を消す' : '音を鳴らす';
   };
   $('#btnReplay').onclick = () => {
