@@ -907,11 +907,21 @@ async function makeLink(){
   $('#linkUrl').value = url;
   $('#btnTest').href = url;
   const n = url.length;
-  $('#linkNote').textContent =
+  let note =
     `リンクの長さ：${n.toLocaleString()} 文字。` +
     (n > 7000
       ? ' かなり長い手紙のため、一部のアプリではリンクが途切れることがあります。メールでの送付をおすすめします。'
       : ' LINE・メール・メッセージアプリなどにそのまま貼り付けて送れます。');
+  const local = location.protocol === 'file:' ||
+    /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+  if (local){
+    note = '⚠ いまこのページは、あなたのPCの中のファイル（またはローカルサーバー）として開かれています。'
+      + 'そのため、このリンクはこのPCでしか開けません。'
+      + 'GitHub Pages などで公開したページを開いて、そこでリンクを作成してください。\n' + note;
+  }
+  $('#linkNote').textContent = note;
+  $('#linkNote').style.whiteSpace = 'pre-line';
+  $('#linkNote').style.color = local ? '#e2b06a' : '';
   $('#linkModal').classList.remove('hidden');
 }
 

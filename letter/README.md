@@ -35,8 +35,12 @@
 
 静的ファイル1枚なので、そのまま配信できます。
 
-- **GitHub Pages**: リポジトリの Settings → Pages で公開すると `https://<user>.github.io/<repo>/letter/` でアクセスできます。
+- **GitHub Pages(推奨)**: このリポジトリには `.github/workflows/deploy-pages.yml` が含まれており、
+  main ブランチへマージすると自動で GitHub Pages へデプロイされます。
+  公開後は `https://<user>.github.io/<repo>/letter/` でアクセスできます。
+  (動かない場合は Settings → Pages → Source を「GitHub Actions」にしてください。無料プランでは公開リポジトリのみ)
 - **Netlify / Vercel / Cloudflare Pages**: リポジトリを接続するだけで動きます。
-- ローカルでは `letter/index.html` をブラウザで開くだけでも動作します。
+- ローカルでも `letter/index.html` を開けば動作しますが、**共有リンクは公開ページ上で作成する必要があります**。
+  PC内のファイルとして開いたまま作ったリンク(`file:///…`)は、そのPCでしか開けません。
 
 ※ フォントは Google Fonts から読み込むため、オンライン環境での閲覧を想定しています(読み込めない場合はシステムフォントで表示されます)。
