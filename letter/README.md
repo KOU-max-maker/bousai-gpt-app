@@ -36,8 +36,9 @@
 静的ファイル1枚なので、そのまま配信できます。
 
 - **GitHub Pages(推奨)**: このリポジトリには `.github/workflows/deploy-pages.yml` が含まれており、
-  main ブランチへマージすると自動で GitHub Pages へデプロイされます。
-  公開後は `https://<user>.github.io/<repo>/letter/` でアクセスできます。
+  main ブランチへマージすると `letter/` フォルダだけが自動で GitHub Pages へデプロイされます
+  (リポジトリ内の他のファイルは公開されません)。
+  公開後は `https://<user>.github.io/<repo>/` でアクセスできます。
   (動かない場合は Settings → Pages → Source を「GitHub Actions」にしてください。無料プランでは公開リポジトリのみ)
 - **Netlify / Vercel / Cloudflare Pages**: リポジトリを接続するだけで動きます。
 - ローカルでも `letter/index.html` を開けば動作しますが、**共有リンクは公開ページ上で作成する必要があります**。
