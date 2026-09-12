@@ -417,6 +417,81 @@ input[type=range]::-moz-range-thumb{
 .map-plane path{fill:#f7e7bd}
 .map-plane{filter:drop-shadow(0 0 1.6px rgba(247,231,189,.95)) drop-shadow(0 0 5px rgba(236,207,142,.65))}
 
+/* --- mailbox delivery --- */
+.mail-wrap{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  transition:opacity .8s, transform .8s;
+}
+.mail-wrap.away{opacity:0;transform:translateY(6vh);pointer-events:none}
+.mail-scene{position:relative;width:min(420px,80vw);height:min(360px,50vh)}
+.mail-ground{
+  position:absolute;left:-14%;right:-14%;bottom:9%;height:18%;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,.5),rgba(0,0,0,0) 72%);
+}
+.mail-house{position:absolute;left:50%;bottom:12%;width:64%;height:72%;transform:translateX(-50%)}
+.mail-house .roof{
+  position:absolute;left:-9%;right:-9%;top:0;height:30%;
+  background:linear-gradient(180deg,#2c2013,#1a130b);
+  clip-path:polygon(0 100%,50% 0,100% 100%);
+}
+.mail-house .body{
+  position:absolute;left:0;right:0;bottom:0;height:74%;
+  background:linear-gradient(180deg,#241c14,#171009);border-radius:1px;
+}
+.mail-house .window{
+  position:absolute;left:12%;bottom:44%;width:20%;height:24%;border-radius:1px;
+  background:radial-gradient(circle at 38% 32%,#ffe6ad,#c99a4c 70%,#8a6a34);
+  box-shadow:0 0 16px 4px rgba(255,214,140,.5);
+}
+.mail-door{
+  position:absolute;right:13%;bottom:0;width:27%;height:58%;border-radius:2px 2px 0 0;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--wax,#8c2f39) 46%,#2b2013 54%),color-mix(in srgb,var(--wax,#8c2f39) 30%,#1a130c 70%));
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.3);
+}
+.mail-knob{
+  position:absolute;left:14%;top:52%;width:11%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#f4e3ba,#c8a45f 60%,#8f6f33);
+}
+.mail-slot{
+  position:absolute;left:16%;right:16%;top:36%;height:16%;border-radius:1px;
+  background:#0c0805;box-shadow:inset 0 2px 4px rgba(0,0,0,.75);
+}
+.mail-flap{
+  position:absolute;left:16%;right:16%;top:36%;height:16%;border-radius:1px 1px 0 0;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--wax,#8c2f39) 85%,white 15%),var(--wax,#8c2f39));
+  transform-origin:top center;transition:transform .5s cubic-bezier(.4,0,.3,1);
+}
+.mail-door.open .mail-flap{transform:rotateX(-125deg)}
+.mail-slot-glow{
+  position:absolute;left:16%;right:16%;top:36%;height:16%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,224,160,.7),transparent 72%);
+  opacity:0;pointer-events:none;
+}
+.mail-door.delivered .mail-slot-glow{animation:mailGlow 1s ease-out}
+@keyframes mailGlow{0%{opacity:.85;transform:scale(.7)}100%{opacity:0;transform:scale(2.2)}}
+.mail-envelope{
+  position:absolute;width:15%;aspect-ratio:3/2;left:36%;top:-24%;
+  background:linear-gradient(175deg,var(--env,#eee2c6),var(--envDark,#d6c396));
+  border-radius:2px;box-shadow:0 6px 14px rgba(0,0,0,.45);opacity:0;
+}
+.mail-envelope::before{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(120deg,rgba(0,0,0,.12) 0 50%,transparent 50%) left/50% 100% no-repeat,
+    linear-gradient(-120deg,rgba(255,255,255,.16) 0 50%,transparent 50%) right/50% 100% no-repeat;
+}
+.mail-envelope.fly{animation:mailFly 1.15s cubic-bezier(.5,0,.4,1) forwards}
+@keyframes mailFly{
+  0%{opacity:0;left:38%;top:-24%;transform:rotate(-10deg) scale(1)}
+  10%{opacity:1}
+  66%{left:63%;top:24%;transform:rotate(6deg) scale(.9);opacity:1}
+  100%{left:68%;top:32%;transform:rotate(10deg) scale(.22);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .mail-envelope.fly{animation-duration:.3s}
+}
+
 /* --- letter sheet --- */
 .letter-viewport{
   position:absolute;inset:0;overflow:auto;display:flex;z-index:10;
@@ -686,6 +761,26 @@ input[type=range]::-moz-range-thumb{
       <div class="map-vignette"></div>
     </div>
     <div class="rd-ui" id="mapSkipWrap"><button id="mapSkip" type="button">地図をとばす</button></div>
+  </div>
+
+  <div class="mail-wrap hidden" id="mailWrap">
+    <p class="arrive" id="mailTitle">お家のポストに届きます</p>
+    <div class="mail-scene">
+      <div class="mail-ground"></div>
+      <div class="mail-house">
+        <div class="roof"></div>
+        <div class="body"></div>
+        <div class="window"></div>
+        <div class="mail-door" id="mailDoor">
+          <div class="mail-knob"></div>
+          <div class="mail-slot-glow"></div>
+          <div class="mail-slot"></div>
+          <div class="mail-flap"></div>
+        </div>
+      </div>
+      <div class="mail-envelope" id="mailEnvelope"></div>
+    </div>
+    <div class="rd-ui" id="mailSkipWrap"><button id="mailSkip" type="button">とばす</button></div>
   </div>
 
   <div class="env-wrap" id="envWrap">
@@ -1158,6 +1253,10 @@ const Sound = {
     setTimeout(() => this.burst(900, 1.5, 0.07, 0.14), 55);
   },
   paper(){ this.burst(700, 0.6, 0.55, 0.07, 'lowpass'); },
+  mailClink(){
+    this.thump(210, 0.09, 0.16);
+    setTimeout(() => this.burst(1800, 2.0, 0.05, 0.05, 'highpass'), 40);
+  },
 };
 
 /* ================= stage / reader ================= */
@@ -1375,14 +1474,53 @@ async function playMapJourney(d, my){
     });
     if (my !== runToken) return;
   }
-  await wait(reduce ? 150 : 550); if (my !== runToken) return;
+  await wait((reduce || mapFfwd) ? 80 : 550); if (my !== runToken) return;
   $('#mapWrap').classList.add('away');
-  await wait(reduce ? 100 : 750); if (my !== runToken) return;
+  await wait((reduce || mapFfwd) ? 60 : 750); if (my !== runToken) return;
+  $('#mapWrap').classList.add('hidden');
+  playMailboxScene(d, my);
+}
+
+async function playMailboxScene(d, my){
+  const box = $('#mailDoor');
+  box.classList.remove('open', 'delivered');
+  const env = $('#mailEnvelope');
+  env.classList.remove('fly');
+  void env.offsetWidth;   // restart the CSS animation next time it's added
+
+  $('#mailWrap').classList.remove('hidden', 'away');
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const quick = reduce || mapFfwd;
+  if (quick){
+    box.classList.add('open', 'delivered');
+    Sound.mailClink();
+    await wait(reduce ? 300 : 60); if (my !== runToken) return;
+  } else {
+    env.classList.add('fly');
+    await wait(1050); if (my !== runToken) return;
+    if (mapFfwd){
+      env.classList.remove('fly');
+      box.classList.add('open', 'delivered');
+      Sound.mailClink();
+    } else {
+      box.classList.add('open');
+      Sound.mailClink();
+      await wait(320); if (my !== runToken) return;
+      box.classList.remove('open');
+      box.classList.add('delivered');
+      await wait(mapFfwd ? 60 : 850); if (my !== runToken) return;
+    }
+  }
+  $('#mailWrap').classList.add('away');
+  await wait((reduce || mapFfwd) ? 80 : 700); if (my !== runToken) return;
+  $('#mailWrap').classList.add('hidden');
   revealEnvelope(d);
 }
 
 function revealEnvelope(d){
   $('#mapWrap').classList.add('hidden');
+  $('#mailWrap').classList.add('hidden');
   const env = $('#envelope');
   env.classList.remove('open', 'flapback');
   $('#envFloat').classList.remove('still');
@@ -1421,6 +1559,8 @@ function startReader(d, editorPreview){
   $('#letterViewport').classList.add('hidden');
   $('#mapWrap').classList.add('hidden');
   $('#mapWrap').classList.remove('away');
+  $('#mailWrap').classList.add('hidden');
+  $('#mailWrap').classList.remove('away');
 
   // reset envelope, stay hidden until the map journey (if any) finishes
   const env = $('#envelope');
@@ -1598,7 +1738,8 @@ function finishWriting(my){
 
 /* --- reader controls --- */
 function bindReaderUI(){
-  $('#mapSkip').onclick = () => { mapFfwd = true; };
+  $('#mapSkip').onclick = () => { mapFfwd = true; if (_waiter) _waiter(); };
+  $('#mailSkip').onclick = () => { mapFfwd = true; if (_waiter) _waiter(); };
   $('#btnSkip').onclick = () => { ffwd = true; if (_waiter) _waiter(); };
   $('#btnMute').onclick = () => {
     Sound.enabled = !Sound.enabled;
@@ -1627,6 +1768,7 @@ function closeReader(){
   stopBgm();
   ensureEditor();
   $('#mapWrap').classList.add('hidden');
+  $('#mailWrap').classList.add('hidden');
   $('#stage').classList.add('hidden');
   $('#editor').classList.remove('hidden');
   document.body.style.overflow = '';
