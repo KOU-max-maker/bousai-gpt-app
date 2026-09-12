@@ -391,12 +391,22 @@ input[type=range]::-moz-range-thumb{
   transition:opacity .8s, transform .8s;
 }
 .map-wrap.away{opacity:0;transform:translateY(6vh);pointer-events:none}
-.map-svg{width:min(940px,92vw);height:min(60vh,520px);display:block}
 #mapTitle{letter-spacing:.13em;text-indent:.13em;max-width:90vw;text-align:center;padding:0 12px}
-.map-dots circle{fill:#e9d3a0;opacity:.5}
+.map-svg-wrap{
+  position:relative;width:min(940px,92vw);height:min(60vh,520px);
+  border-radius:18px;overflow:hidden;
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 60%,transparent 100%);
+  mask-image:radial-gradient(ellipse at center,#000 60%,transparent 100%);
+}
+.map-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.map-photo{filter:saturate(1.05) brightness(.72) contrast(1.08)}
+.map-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(8,12,9,0) 40%,rgba(6,10,8,.5) 80%,rgba(4,7,5,.78) 100%);
+}
 .map-arc{
-  fill:none;stroke:#eccf8e;stroke-width:.5;stroke-linecap:round;opacity:.92;
-  filter:drop-shadow(0 0 1.6px rgba(236,207,142,.85));
+  fill:none;stroke:#f5deab;stroke-width:1.4;stroke-linecap:round;opacity:.95;
+  filter:drop-shadow(0 0 2.4px rgba(245,222,171,.9));
 }
 .map-mark circle:first-child{fill:#f7e7bd}
 .map-pulse{
@@ -662,15 +672,19 @@ input[type=range]::-moz-range-thumb{
 
   <div class="map-wrap hidden" id="mapWrap">
     <p class="arrive" id="mapTitle"></p>
-    <svg id="mapSvg" class="map-svg" viewBox="0 0 144 54" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <g id="mapDotsBase" class="map-dots"></g>
-      <use href="#mapDotsBase" x="-144"></use>
-      <use href="#mapDotsBase" x="144"></use>
-      <path id="mapArc" class="map-arc"></path>
-      <g id="mapFromMark" class="map-mark"><circle r="1.05"></circle><circle class="map-pulse" r="1.05"></circle></g>
-      <g id="mapToMark" class="map-mark"><circle r="1.05"></circle><circle class="map-pulse" r="1.05"></circle></g>
-      <g id="mapPlane" class="map-plane"><path d="M-1.3 0 L1.5 0 L-1.3 0.62 L-0.62 0 L-1.3 -0.62 Z"></path></g>
-    </svg>
+    <div class="map-svg-wrap">
+      <!-- world.jpg: satellite-composite Earth imagery (NASA Blue Marble derivative, public domain) -->
+      <svg id="mapSvg" class="map-svg" viewBox="-180 -90 360 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <image href="world.jpg" class="map-photo" x="-540" y="-90" width="360" height="180" preserveAspectRatio="none"></image>
+        <image href="world.jpg" class="map-photo" x="-180" y="-90" width="360" height="180" preserveAspectRatio="none"></image>
+        <image href="world.jpg" class="map-photo" x="180" y="-90" width="360" height="180" preserveAspectRatio="none"></image>
+        <path id="mapArc" class="map-arc"></path>
+        <g id="mapFromMark" class="map-mark"><circle r="2.6"></circle><circle class="map-pulse" r="2.6"></circle></g>
+        <g id="mapToMark" class="map-mark"><circle r="2.6"></circle><circle class="map-pulse" r="2.6"></circle></g>
+        <g id="mapPlane" class="map-plane"><path d="M-3.6 0 L4.1 0 L-3.6 1.7 L-1.7 0 L-3.6 -1.7 Z"></path></g>
+      </svg>
+      <div class="map-vignette"></div>
+    </div>
     <div class="rd-ui" id="mapSkipWrap"><button id="mapSkip" type="button">地図をとばす</button></div>
   </div>
 
@@ -779,11 +793,6 @@ const PENSOUNDS = {
 const SPEED_MUL = {1:2.0, 2:1.45, 3:1.0, 4:0.65, 5:0.42};
 const isKanji = ch => /[⺀-⿟㐀-䶿一-鿿豈-﫿]/.test(ch);
 
-/* --- world map: compact land-mask grid (Natural Earth 110m, 2.5°×3° cells) --- */
-const LAND = {
-  lonStep:2.5, latStep:3, lonStart:-180, lonCount:144, latStart:-78, latCount:54,
-  b64:'AP7///8HIPj///////////8DAAD+X/9/AAD8//////////8HAAAAAAHYAADw////7/////8fAAAAAABgAAAAAED+D////38AAAAAAADAAAAAAABAAAACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAYAAAAAAB4AAAAAAAAAAAAAAggAAAAAAD4AAAAAAAAAAAAAADAAAAAAAD4AwAAAAAAAAAAAB8AAAAAAADwBwAAAA8AAACAwx8AAAAAAADwDwAAgB8AAACA/z8AAAAAAADwHwAAgD8AAADA/z8AAAAAAADwPwAAwH8EAADA/x8AAAAAAADw/wAAwH8MAACA/w8EAAAAAADw/wEA4H8MAAAA/geAAAAAAAD8/wEA4P8ZAAAAfAYAAAAAAAD8/wEAwP8BAAAAAAIAAAAAAAD+/wMAwP8AAAAABAoAAAAAAAD//wMA4P8AAAAAAFcAAAAAAAD//wEA4P8BAABmsQEAAAAAAAD/DwAA8P8DAABzAQAAAAAAAAD+DwAA8P8HAIBiAAAAAAAAAAD8BwDw/f8PAACABAAAAAAAAID9AAD4//8fgAEEAAAAAAAAAEAQAAD8//8DgAAMBAAAAAAAAHgAAAD8//8dwAEPAAAAAAAAgB8CAAD8//9+wMMHAAAAAAAAwDMCAAD8/3//wOcXAAAAAAAA0AEAAAD8/39/+P//AAAAAAAA+AMAAAD4/7/P////AQAAAAAA/N8AAADg///v////AQAAAAAA/P8BAADgH4D/////MQAAAAAA//8DAAAAHoD/////iQEAAACA//8DAADgAPrP////CAEAAACA//8fAADgY0/u////HwEAAACA////AAAA38/n////fwIAAAAA//8/BgCA/////////wIAAADg////AQCA/////////wMAAAD4///+AwCg8P//////f4MBAAL4/x/8AADAcP7//////4ADgBf//wdcAAAA+PD//////z8GgP///w9Q8AAA+P7/////////3////z/Y+IMG4D/+////////gP/9mcgc8D8AgH8A9v/////vAADAfvMH/H8AAABg8P//Dw8AAAAAOP0B/v8AAACAAfg/ABsAAAAAGMP7//8BwAIAAAABAAAAAAAAAOi///8HAAAAAEAAAAAA',
-};
 /* --- world map: sender & recipient country presets (name, lat, lon) --- */
 const COUNTRIES = {
   jp:{name:'日本（東京）',lat:35.68,lon:139.69}, ie:{name:'アイルランド（ダブリン）',lat:53.35,lon:-6.26},
@@ -1296,40 +1305,9 @@ function stopBgm(){
 }
 
 /* --- world map journey --- */
-let mapDotsBuilt = false, mapFfwd = false;
-function decodeLandMask(){
-  const bin = atob(LAND.b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const total = LAND.lonCount * LAND.latCount;
-  const bits = new Uint8Array(total);
-  for (let i = 0; i < total; i++) bits[i] = (bytes[i >> 3] >> (i % 8)) & 1;
-  return bits;
-}
-function ensureMapDots(){
-  if (mapDotsBuilt) return;
-  mapDotsBuilt = true;
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const base = $('#mapDotsBase');
-  const bits = decodeLandMask();
-  const frag = document.createDocumentFragment();
-  for (let j = 0; j < LAND.latCount; j++){
-    const gy = (LAND.latCount - 1) - j;
-    for (let i = 0; i < LAND.lonCount; i++){
-      if (!bits[j * LAND.lonCount + i]) continue;
-      const c = document.createElementNS(svgNS, 'circle');
-      c.setAttribute('cx', i + 0.5);
-      c.setAttribute('cy', gy + 0.5);
-      c.setAttribute('r', 0.44);
-      frag.appendChild(c);
-    }
-  }
-  base.appendChild(frag);
-}
+let mapFfwd = false;
 function projectLonLat(lon, lat){
-  const gx = (lon - LAND.lonStart) / LAND.lonStep;
-  const gy = (LAND.latCount - 1) - (lat - LAND.latStart) / LAND.latStep;
-  return [gx, gy];
+  return [lon, -lat];   // equirectangular; y=-lat puts the north pole at the top
 }
 function bezierPoint(t, x1, y1, cx, cy, x2, y2){
   const mt = 1 - t;
@@ -1339,22 +1317,21 @@ function bezierPoint(t, x1, y1, cx, cy, x2, y2){
   ];
 }
 async function playMapJourney(d, my){
-  ensureMapDots();
   const from = COUNTRIES[d.mapFrom] || COUNTRIES.jp;
   const to = COUNTRIES[d.mapTo] || COUNTRIES.ie;
   const [gx1, gy1] = projectLonLat(from.lon, from.lat);
   const delta = ((to.lon - from.lon + 540) % 360) - 180;   // shortest wrap-aware direction
-  const gx2 = gx1 + delta / LAND.lonStep;
+  const gx2 = gx1 + delta;
   const [, gy2] = projectLonLat(to.lon, to.lat);
-  const dist = Math.hypot(gx2 - gx1, gy2 - gy1);
-  const bend = Math.max(dist * 0.22, 6);
+  const dist = Math.hypot(gx2 - gx1, gy2 - gy1);           // degrees, roughly
+  const bend = Math.max(dist * 0.22, 14);
   const midX = (gx1 + gx2) / 2, midY = (gy1 + gy2) / 2 - bend;
 
-  const marginX = Math.max(9, dist * 0.16), marginY = 9;
+  const marginX = Math.max(22, dist * 0.16), marginY = 20;
   let minX = Math.min(gx1, gx2) - marginX, maxX = Math.max(gx1, gx2) + marginX;
   let midYc = (Math.min(gy1, gy2, midY) + Math.max(gy1, gy2, midY)) / 2;
-  let spanY = Math.max(Math.abs(gy2 - gy1), 18) + marginY * 2;
-  let minY = Math.max(midYc - spanY / 2, -6), maxY = Math.min(midYc + spanY / 2, LAND.latCount + 6);
+  let spanY = Math.max(Math.abs(gy2 - gy1), 42) + marginY * 2;
+  let minY = Math.max(midYc - spanY / 2, -95), maxY = Math.min(midYc + spanY / 2, 95);
   $('#mapSvg').setAttribute('viewBox', `${minX.toFixed(1)} ${minY.toFixed(1)} ${(maxX-minX).toFixed(1)} ${(maxY-minY).toFixed(1)}`);
 
   const dStr = `M ${gx1.toFixed(2)} ${gy1.toFixed(2)} Q ${midX.toFixed(2)} ${midY.toFixed(2)} ${gx2.toFixed(2)} ${gy2.toFixed(2)}`;
@@ -1379,7 +1356,7 @@ async function playMapJourney(d, my){
     plane.setAttribute('transform', `translate(${gx2.toFixed(2)},${gy2.toFixed(2)})`);
     await wait(900); if (my !== runToken) return;
   } else {
-    const duration = Math.min(5200, Math.max(2600, 1400 + dist * 22));
+    const duration = Math.min(5200, Math.max(2600, 1400 + dist * 10));
     const start = performance.now();
     await new Promise(resolve => {
       function frame(now){
