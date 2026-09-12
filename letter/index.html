@@ -106,7 +106,7 @@ input,textarea,select{font-family:inherit}
   margin-bottom:11px;font-weight:600;
 }
 .fld .t small{color:var(--tx-dim);letter-spacing:.08em;font-weight:400;font-size:11px}
-input[type=text],textarea{
+input[type=text],textarea,select{
   width:100%;
   background:#0f0c08;
   border:1px solid var(--line);
@@ -117,10 +117,17 @@ input[type=text],textarea{
   letter-spacing:.05em;
   transition:border-color .25s, box-shadow .25s;
 }
-input[type=text]:focus,textarea:focus{
+input[type=text]:focus,textarea:focus,select:focus{
   outline:none;border-color:var(--gold);
   box-shadow:0 0 0 3px rgba(200,164,95,.14);
 }
+select{
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23c8a45f' d='M5.5 7.5l4.5 4.5 4.5-4.5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:14px;
+  padding-right:34px;
+}
+select option{background:#171310;color:#efe6d6}
 textarea{min-height:200px;line-height:2;resize:vertical}
 .counter{text-align:right;font-size:11px;color:var(--tx-dim);margin-top:5px;letter-spacing:.1em}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -189,6 +196,17 @@ input[type=range]::-moz-range-thumb{
 /* preview column */
 .pv-col{position:sticky;top:24px}
 @media (max-width:980px){.pv-col{position:static}}
+.pv-journey{
+  background:linear-gradient(175deg,#16222f,#0c141c);
+  border:1px solid var(--line);border-radius:12px;
+  padding:14px 18px;margin-bottom:16px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.pv-journey-svg{width:84px;height:30px;flex:none}
+.pv-journey-svg path{fill:none;stroke:var(--gold);stroke-width:1.4;stroke-dasharray:3 2.4;opacity:.85}
+.pv-journey-svg circle{fill:#f0d99a}
+.pv-journey-text{font-size:13px;letter-spacing:.05em;color:var(--tx);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pv-journey-arrow{color:var(--gold-soft)}
 .pv-scene{
   border-radius:14px;
   border:1px solid var(--line);
@@ -366,6 +384,29 @@ input[type=range]::-moz-range-thumb{
 @keyframes hintIn{to{opacity:.8}}
 @keyframes hintPulse{0%,100%{opacity:.8}50%{opacity:.35}}
 
+/* --- world map journey --- */
+.map-wrap{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  transition:opacity .8s, transform .8s;
+}
+.map-wrap.away{opacity:0;transform:translateY(6vh);pointer-events:none}
+.map-svg{width:min(940px,92vw);height:min(60vh,520px);display:block}
+#mapTitle{letter-spacing:.13em;text-indent:.13em;max-width:90vw;text-align:center;padding:0 12px}
+.map-dots circle{fill:#e9d3a0;opacity:.5}
+.map-arc{
+  fill:none;stroke:#eccf8e;stroke-width:.5;stroke-linecap:round;opacity:.92;
+  filter:drop-shadow(0 0 1.6px rgba(236,207,142,.85));
+}
+.map-mark circle:first-child{fill:#f7e7bd}
+.map-pulse{
+  fill:#f7e7bd;transform-box:fill-box;transform-origin:center;
+  animation:mapPulse 2.4s ease-out infinite;
+}
+@keyframes mapPulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(3.4);opacity:0}}
+.map-plane path{fill:#f7e7bd}
+.map-plane{filter:drop-shadow(0 0 1.6px rgba(247,231,189,.95)) drop-shadow(0 0 5px rgba(236,207,142,.65))}
+
 /* --- letter sheet --- */
 .letter-viewport{
   position:absolute;inset:0;overflow:auto;display:flex;z-index:10;
@@ -489,7 +530,7 @@ input[type=range]::-moz-range-thumb{
 }
 
 @media (prefers-reduced-motion:reduce){
-  .env-float,.seal,#dust span,.pen-rot,.hint{animation:none!important}
+  .env-float,.seal,#dust span,.pen-rot,.hint,.map-pulse{animation:none!important}
   .hint{opacity:.8}
   .envelope{animation-duration:.4s;animation-delay:0s}
 }
@@ -531,6 +572,21 @@ input[type=range]::-moz-range-thumb{
         </div>
       </div>
 
+      <div class="fld">
+        <div class="t">手紙の旅 <small>開封前に、世界地図で旅の軌跡を見せます</small></div>
+        <div class="row2">
+          <div>
+            <label style="display:block;font-size:11px;color:var(--tx-dim);margin-bottom:6px;letter-spacing:.08em">出発地</label>
+            <select id="fMapFrom"></select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;color:var(--tx-dim);margin-bottom:6px;letter-spacing:.08em">届け先</label>
+            <select id="fMapTo"></select>
+          </div>
+        </div>
+        <label class="check" style="margin-top:14px"><input type="checkbox" id="fMapShow" checked><span class="box"></span>世界地図のアニメーションを見せる</label>
+      </div>
+
       <div class="fld"><div class="t">便箋 <small>紙と情景の設え</small></div><div class="opts" id="gPaper"></div></div>
       <div class="fld"><div class="t">書き方向</div><div class="seg" id="gDir"></div></div>
       <div class="fld"><div class="t">筆致（フォント）</div><div class="opts" id="gFont"></div></div>
@@ -557,6 +613,18 @@ input[type=range]::-moz-range-thumb{
 
     <!-- right : preview -->
     <section class="pv-col">
+      <div class="pv-journey" id="pvJourney">
+        <svg viewBox="0 0 100 36" class="pv-journey-svg" aria-hidden="true">
+          <path d="M8 30 Q50 2 92 30"/>
+          <circle cx="8" cy="30" r="2.6"/>
+          <circle cx="92" cy="30" r="2.6"/>
+        </svg>
+        <div class="pv-journey-text">
+          <span id="pvFromName"></span>
+          <span class="pv-journey-arrow">✈</span>
+          <span id="pvToName"></span>
+        </div>
+      </div>
       <div class="pv-scene grain" id="pvScene">
         <div class="pv-sheet grain" id="pvSheet"></div>
       </div>
@@ -591,6 +659,20 @@ input[type=range]::-moz-range-thumb{
   <div class="vignette"></div>
   <div id="dust"></div>
   <button id="btnBack" class="hidden">← 編集にもどる</button>
+
+  <div class="map-wrap hidden" id="mapWrap">
+    <p class="arrive" id="mapTitle"></p>
+    <svg id="mapSvg" class="map-svg" viewBox="0 0 144 54" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g id="mapDotsBase" class="map-dots"></g>
+      <use href="#mapDotsBase" x="-144"></use>
+      <use href="#mapDotsBase" x="144"></use>
+      <path id="mapArc" class="map-arc"></path>
+      <g id="mapFromMark" class="map-mark"><circle r="1.05"></circle><circle class="map-pulse" r="1.05"></circle></g>
+      <g id="mapToMark" class="map-mark"><circle r="1.05"></circle><circle class="map-pulse" r="1.05"></circle></g>
+      <g id="mapPlane" class="map-plane"><path d="M-1.3 0 L1.5 0 L-1.3 0.62 L-0.62 0 L-1.3 -0.62 Z"></path></g>
+    </svg>
+    <div class="rd-ui" id="mapSkipWrap"><button id="mapSkip" type="button">地図をとばす</button></div>
+  </div>
 
   <div class="env-wrap" id="envWrap">
     <p class="arrive" id="arriveMsg">あなたへ、手紙が届いています</p>
@@ -697,6 +779,39 @@ const PENSOUNDS = {
 const SPEED_MUL = {1:2.0, 2:1.45, 3:1.0, 4:0.65, 5:0.42};
 const isKanji = ch => /[⺀-⿟㐀-䶿一-鿿豈-﫿]/.test(ch);
 
+/* --- world map: compact land-mask grid (Natural Earth 110m, 2.5°×3° cells) --- */
+const LAND = {
+  lonStep:2.5, latStep:3, lonStart:-180, lonCount:144, latStart:-78, latCount:54,
+  b64:'AP7///8HIPj///////////8DAAD+X/9/AAD8//////////8HAAAAAAHYAADw////7/////8fAAAAAABgAAAAAED+D////38AAAAAAADAAAAAAABAAAACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAYAAAAAAB4AAAAAAAAAAAAAAggAAAAAAD4AAAAAAAAAAAAAADAAAAAAAD4AwAAAAAAAAAAAB8AAAAAAADwBwAAAA8AAACAwx8AAAAAAADwDwAAgB8AAACA/z8AAAAAAADwHwAAgD8AAADA/z8AAAAAAADwPwAAwH8EAADA/x8AAAAAAADw/wAAwH8MAACA/w8EAAAAAADw/wEA4H8MAAAA/geAAAAAAAD8/wEA4P8ZAAAAfAYAAAAAAAD8/wEAwP8BAAAAAAIAAAAAAAD+/wMAwP8AAAAABAoAAAAAAAD//wMA4P8AAAAAAFcAAAAAAAD//wEA4P8BAABmsQEAAAAAAAD/DwAA8P8DAABzAQAAAAAAAAD+DwAA8P8HAIBiAAAAAAAAAAD8BwDw/f8PAACABAAAAAAAAID9AAD4//8fgAEEAAAAAAAAAEAQAAD8//8DgAAMBAAAAAAAAHgAAAD8//8dwAEPAAAAAAAAgB8CAAD8//9+wMMHAAAAAAAAwDMCAAD8/3//wOcXAAAAAAAA0AEAAAD8/39/+P//AAAAAAAA+AMAAAD4/7/P////AQAAAAAA/N8AAADg///v////AQAAAAAA/P8BAADgH4D/////MQAAAAAA//8DAAAAHoD/////iQEAAACA//8DAADgAPrP////CAEAAACA//8fAADgY0/u////HwEAAACA////AAAA38/n////fwIAAAAA//8/BgCA/////////wIAAADg////AQCA/////////wMAAAD4///+AwCg8P//////f4MBAAL4/x/8AADAcP7//////4ADgBf//wdcAAAA+PD//////z8GgP///w9Q8AAA+P7/////////3////z/Y+IMG4D/+////////gP/9mcgc8D8AgH8A9v/////vAADAfvMH/H8AAABg8P//Dw8AAAAAOP0B/v8AAACAAfg/ABsAAAAAGMP7//8BwAIAAAABAAAAAAAAAOi///8HAAAAAEAAAAAA',
+};
+/* --- world map: sender & recipient country presets (name, lat, lon) --- */
+const COUNTRIES = {
+  jp:{name:'日本（東京）',lat:35.68,lon:139.69}, ie:{name:'アイルランド（ダブリン）',lat:53.35,lon:-6.26},
+  kr:{name:'韓国（ソウル）',lat:37.57,lon:126.98}, cn:{name:'中国（北京）',lat:39.90,lon:116.41},
+  tw:{name:'台湾（台北）',lat:25.03,lon:121.56}, hk:{name:'香港',lat:22.32,lon:114.17},
+  sg:{name:'シンガポール',lat:1.35,lon:103.82}, th:{name:'タイ（バンコク）',lat:13.75,lon:100.50},
+  vn:{name:'ベトナム（ハノイ）',lat:21.03,lon:105.85}, ph:{name:'フィリピン（マニラ）',lat:14.60,lon:120.98},
+  id:{name:'インドネシア（ジャカルタ）',lat:-6.21,lon:106.85}, my:{name:'マレーシア（クアラルンプール）',lat:3.14,lon:101.69},
+  in:{name:'インド（デリー）',lat:28.61,lon:77.21}, au:{name:'オーストラリア（シドニー）',lat:-33.87,lon:151.21},
+  nz:{name:'ニュージーランド（ウェリントン）',lat:-41.29,lon:174.78}, us:{name:'アメリカ（ニューヨーク）',lat:40.71,lon:-74.01},
+  ca:{name:'カナダ（トロント）',lat:43.65,lon:-79.38}, mx:{name:'メキシコ（メキシコシティ）',lat:19.43,lon:-99.13},
+  br:{name:'ブラジル（サンパウロ）',lat:-23.55,lon:-46.63}, ar:{name:'アルゼンチン（ブエノスアイレス）',lat:-34.60,lon:-58.38},
+  gb:{name:'イギリス（ロンドン）',lat:51.51,lon:-0.13}, fr:{name:'フランス（パリ）',lat:48.86,lon:2.35},
+  de:{name:'ドイツ（ベルリン）',lat:52.52,lon:13.40}, it:{name:'イタリア（ローマ）',lat:41.90,lon:12.50},
+  es:{name:'スペイン（マドリード）',lat:40.42,lon:-3.70}, pt:{name:'ポルトガル（リスボン）',lat:38.72,lon:-9.14},
+  nl:{name:'オランダ（アムステルダム）',lat:52.37,lon:4.90}, be:{name:'ベルギー（ブリュッセル）',lat:50.85,lon:4.35},
+  ch:{name:'スイス（チューリッヒ）',lat:47.38,lon:8.54}, at:{name:'オーストリア（ウィーン）',lat:48.21,lon:16.37},
+  se:{name:'スウェーデン（ストックホルム）',lat:59.33,lon:18.07}, no:{name:'ノルウェー（オスロ）',lat:59.91,lon:10.75},
+  dk:{name:'デンマーク（コペンハーゲン）',lat:55.68,lon:12.57}, fi:{name:'フィンランド（ヘルシンキ）',lat:60.17,lon:24.94},
+  pl:{name:'ポーランド（ワルシャワ）',lat:52.23,lon:21.01}, cz:{name:'チェコ（プラハ）',lat:50.08,lon:14.44},
+  gr:{name:'ギリシャ（アテネ）',lat:37.98,lon:23.73}, tr:{name:'トルコ（イスタンブール）',lat:41.01,lon:28.98},
+  ru:{name:'ロシア（モスクワ）',lat:55.76,lon:37.62}, ae:{name:'アラブ首長国連邦（ドバイ）',lat:25.20,lon:55.27},
+  sa:{name:'サウジアラビア（リヤド）',lat:24.71,lon:46.68}, il:{name:'イスラエル（テルアビブ）',lat:32.08,lon:34.78},
+  eg:{name:'エジプト（カイロ）',lat:30.04,lon:31.24}, za:{name:'南アフリカ（ケープタウン）',lat:-33.92,lon:18.42},
+  ke:{name:'ケニア（ナイロビ）',lat:-1.29,lon:36.82}, ng:{name:'ナイジェリア（ラゴス）',lat:6.52,lon:3.38},
+  ma:{name:'モロッコ（カサブランカ）',lat:33.57,lon:-7.59},
+};
+
 const SAMPLE = `元気にしていますか。\nそちらは、もう冬の気配でしょうか。\n\nあなたがいない毎日にも少しずつ慣れたつもりでいたけれど、\nふとした瞬間に、隣にあなたがいない静けさに気づきます。\n\n離れていても、同じ月を見上げていると思うと、\n不思議と心があたたかくなります。\n\n体にだけは、気をつけて。\n次に会える日を、指折り数えて待っています。`;
 
 /* ================= state ================= */
@@ -705,6 +820,7 @@ const state = {
   paper:'cream', font:'klee', size:'m', ink:'blueblack',
   speed:3, dir:'h', seal:'crimson',
   write:'bleed', snd:'fountain', bgm:'',
+  mapShow:true, mapFrom:'jp', mapTo:'ie',
 };
 
 /* ================= helpers ================= */
@@ -781,6 +897,8 @@ function buildEditor(){
   optionGroup($('#gDir'), DIRS, 'dir', (id,o)=>o.name);
   optionGroup($('#gWrite'), WRITES, 'write', (id,o)=>o.name);
   optionGroup($('#gSnd'), PENSOUNDS, 'snd', (id,o)=>o.name);
+  buildCountrySelect($('#fMapFrom'), state.mapFrom);
+  buildCountrySelect($('#fMapTo'), state.mapTo);
 
   $('#fTo').addEventListener('input', e => { state.to = e.target.value; onChange(); });
   $('#fFrom').addEventListener('input', e => { state.from = e.target.value; onChange(); });
@@ -788,6 +906,9 @@ function buildEditor(){
   $('#fDate').addEventListener('change', e => { state.date = e.target.checked; onChange(); });
   $('#fSpeed').addEventListener('input', e => { state.speed = +e.target.value; saveDraft(); });
   $('#fBgm').addEventListener('input', e => { state.bgm = e.target.value; saveDraft(); });
+  $('#fMapFrom').addEventListener('change', e => { state.mapFrom = e.target.value; onChange(); });
+  $('#fMapTo').addEventListener('change', e => { state.mapTo = e.target.value; onChange(); });
+  $('#fMapShow').addEventListener('change', e => { state.mapShow = e.target.checked; onChange(); });
 
   $('#btnSample').onclick = () => {
     if (!state.to)   { state.to = '花子さんへ';  $('#fTo').value = state.to; }
@@ -816,6 +937,16 @@ function fillForm(){
   $('#fTo').value = state.to; $('#fFrom').value = state.from; $('#fBody').value = state.body;
   $('#fDate').checked = state.date; $('#fSpeed').value = state.speed;
   $('#fBgm').value = state.bgm;
+  $('#fMapShow').checked = state.mapShow;
+}
+function buildCountrySelect(el, selectedKey){
+  el.innerHTML = '';
+  for (const [k, c] of Object.entries(COUNTRIES)){
+    const o = document.createElement('option');
+    o.value = k; o.textContent = c.name;
+    if (k === selectedKey) o.selected = true;
+    el.appendChild(o);
+  }
 }
 function onChange(){ updatePreview(); saveDraft(); }
 function saveDraft(){
@@ -829,6 +960,9 @@ function loadDraft(){
   if (!WRITES[state.write]) state.write = 'bleed';
   if (!PENSOUNDS[state.snd]) state.snd = state.sound === false ? 'none' : 'fountain';
   if (typeof state.bgm !== 'string') state.bgm = '';
+  if (!COUNTRIES[state.mapFrom]) state.mapFrom = 'jp';
+  if (!COUNTRIES[state.mapTo]) state.mapTo = 'ie';
+  if (typeof state.mapShow !== 'boolean') state.mapShow = true;
 }
 
 function currentData(){
@@ -844,6 +978,9 @@ function currentData(){
     write:WRITES[state.write]?state.write:'bleed',
     snd:PENSOUNDS[state.snd]?state.snd:'fountain',
     bgm:(state.bgm||'').trim(),
+    mapShow:!!state.mapShow,
+    mapFrom:COUNTRIES[state.mapFrom]?state.mapFrom:'jp',
+    mapTo:COUNTRIES[state.mapTo]?state.mapTo:'ie',
     dateStr:state.date ? todayStr() : '',
   };
 }
@@ -865,9 +1002,21 @@ function composeLines(d){
   return lines;
 }
 
+function updateJourneyPreview(){
+  const el = $('#pvJourney');
+  if (!el) return;
+  const show = !!state.mapShow;
+  el.classList.toggle('hidden', !show);
+  if (!show) return;
+  const from = COUNTRIES[state.mapFrom] || COUNTRIES.jp;
+  const to = COUNTRIES[state.mapTo] || COUNTRIES.ie;
+  $('#pvFromName').textContent = from.name;
+  $('#pvToName').textContent = to.name;
+}
 function updatePreview(){
   const c = $('#counter');
   if (c) c.textContent = [...(state.body||'')].length + ' 文字';
+  updateJourneyPreview();
   const d = currentData();
   const P = PAPERS[d.paper], F = FONTS[d.font], I = INKS[d.ink];
   $('#pvScene').style.background = `linear-gradient(160deg,${P.scene[0]},${P.scene[1]})`;
@@ -1146,12 +1295,139 @@ function stopBgm(){
   if (bgmEl){ try{ bgmEl.pause(); }catch(e){} }
 }
 
+/* --- world map journey --- */
+let mapDotsBuilt = false, mapFfwd = false;
+function decodeLandMask(){
+  const bin = atob(LAND.b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const total = LAND.lonCount * LAND.latCount;
+  const bits = new Uint8Array(total);
+  for (let i = 0; i < total; i++) bits[i] = (bytes[i >> 3] >> (i % 8)) & 1;
+  return bits;
+}
+function ensureMapDots(){
+  if (mapDotsBuilt) return;
+  mapDotsBuilt = true;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const base = $('#mapDotsBase');
+  const bits = decodeLandMask();
+  const frag = document.createDocumentFragment();
+  for (let j = 0; j < LAND.latCount; j++){
+    const gy = (LAND.latCount - 1) - j;
+    for (let i = 0; i < LAND.lonCount; i++){
+      if (!bits[j * LAND.lonCount + i]) continue;
+      const c = document.createElementNS(svgNS, 'circle');
+      c.setAttribute('cx', i + 0.5);
+      c.setAttribute('cy', gy + 0.5);
+      c.setAttribute('r', 0.44);
+      frag.appendChild(c);
+    }
+  }
+  base.appendChild(frag);
+}
+function projectLonLat(lon, lat){
+  const gx = (lon - LAND.lonStart) / LAND.lonStep;
+  const gy = (LAND.latCount - 1) - (lat - LAND.latStart) / LAND.latStep;
+  return [gx, gy];
+}
+function bezierPoint(t, x1, y1, cx, cy, x2, y2){
+  const mt = 1 - t;
+  return [
+    mt * mt * x1 + 2 * mt * t * cx + t * t * x2,
+    mt * mt * y1 + 2 * mt * t * cy + t * t * y2,
+  ];
+}
+async function playMapJourney(d, my){
+  ensureMapDots();
+  const from = COUNTRIES[d.mapFrom] || COUNTRIES.jp;
+  const to = COUNTRIES[d.mapTo] || COUNTRIES.ie;
+  const [gx1, gy1] = projectLonLat(from.lon, from.lat);
+  const delta = ((to.lon - from.lon + 540) % 360) - 180;   // shortest wrap-aware direction
+  const gx2 = gx1 + delta / LAND.lonStep;
+  const [, gy2] = projectLonLat(to.lon, to.lat);
+  const dist = Math.hypot(gx2 - gx1, gy2 - gy1);
+  const bend = Math.max(dist * 0.22, 6);
+  const midX = (gx1 + gx2) / 2, midY = (gy1 + gy2) / 2 - bend;
+
+  const marginX = Math.max(9, dist * 0.16), marginY = 9;
+  let minX = Math.min(gx1, gx2) - marginX, maxX = Math.max(gx1, gx2) + marginX;
+  let midYc = (Math.min(gy1, gy2, midY) + Math.max(gy1, gy2, midY)) / 2;
+  let spanY = Math.max(Math.abs(gy2 - gy1), 18) + marginY * 2;
+  let minY = Math.max(midYc - spanY / 2, -6), maxY = Math.min(midYc + spanY / 2, LAND.latCount + 6);
+  $('#mapSvg').setAttribute('viewBox', `${minX.toFixed(1)} ${minY.toFixed(1)} ${(maxX-minX).toFixed(1)} ${(maxY-minY).toFixed(1)}`);
+
+  const dStr = `M ${gx1.toFixed(2)} ${gy1.toFixed(2)} Q ${midX.toFixed(2)} ${midY.toFixed(2)} ${gx2.toFixed(2)} ${gy2.toFixed(2)}`;
+  const arc = $('#mapArc');
+  arc.setAttribute('d', dStr);
+  const totalLen = arc.getTotalLength();
+  arc.style.strokeDasharray = totalLen;
+  arc.style.strokeDashoffset = totalLen;
+
+  $('#mapFromMark').setAttribute('transform', `translate(${gx1.toFixed(2)},${gy1.toFixed(2)})`);
+  $('#mapToMark').setAttribute('transform', `translate(${gx2.toFixed(2)},${gy2.toFixed(2)})`);
+  $('#mapTitle').textContent = `${from.name} から ${to.name} へ`;
+  const plane = $('#mapPlane');
+  plane.setAttribute('transform', `translate(${gx1.toFixed(2)},${gy1.toFixed(2)})`);
+
+  $('#mapWrap').classList.remove('hidden', 'away');
+  mapFfwd = false;
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    arc.style.strokeDashoffset = 0;
+    plane.setAttribute('transform', `translate(${gx2.toFixed(2)},${gy2.toFixed(2)})`);
+    await wait(900); if (my !== runToken) return;
+  } else {
+    const duration = Math.min(5200, Math.max(2600, 1400 + dist * 22));
+    const start = performance.now();
+    await new Promise(resolve => {
+      function frame(now){
+        if (my !== runToken){ resolve(); return; }
+        let t = Math.min(1, (now - start) / duration);
+        if (mapFfwd) t = 1;
+        const [x, y] = bezierPoint(t, gx1, gy1, midX, midY, gx2, gy2);
+        const [x2, y2] = bezierPoint(Math.min(1, t + 0.01), gx1, gy1, midX, midY, gx2, gy2);
+        const angle = Math.atan2(y2 - y, x2 - x) * 180 / Math.PI;
+        plane.setAttribute('transform', `translate(${x.toFixed(3)},${y.toFixed(3)}) rotate(${angle.toFixed(1)})`);
+        arc.style.strokeDashoffset = (totalLen * (1 - t)).toFixed(2);
+        if (t >= 1){ resolve(); return; }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    });
+    if (my !== runToken) return;
+  }
+  await wait(reduce ? 150 : 550); if (my !== runToken) return;
+  $('#mapWrap').classList.add('away');
+  await wait(reduce ? 100 : 750); if (my !== runToken) return;
+  revealEnvelope(d);
+}
+
+function revealEnvelope(d){
+  $('#mapWrap').classList.add('hidden');
+  const env = $('#envelope');
+  env.classList.remove('open', 'flapback');
+  $('#envFloat').classList.remove('still');
+  const seal = $('#seal');
+  seal.classList.remove('broken');
+  seal.disabled = false;
+  $('#envTo').textContent = d.to || '大切なあなたへ';
+  const wrap = $('#envWrap');
+  wrap.classList.remove('away');
+  wrap.classList.remove('hidden');
+}
+
 function startReader(d, editorPreview){
   // normalize (also covers letters made with older versions)
   if (!WRITES[d.write]) d.write = 'bleed';
   if (!PENSOUNDS[d.snd]) d.snd = d.sound === false ? 'none' : 'fountain';
+  if (!COUNTRIES[d.mapFrom]) d.mapFrom = 'jp';
+  if (!COUNTRIES[d.mapTo]) d.mapTo = 'ie';
+  if (typeof d.mapShow !== 'boolean') d.mapShow = true;
   readerData = d; fromEditor = !!editorPreview;
   ffwd = false; runToken++;
+  const my = runToken;
   applyTheme(d);
   makeDust();
   setupBgm(d.bgm);
@@ -1166,8 +1442,10 @@ function startReader(d, editorPreview){
   $('#rdUi').classList.add('hidden');
   $('#rdEnd').classList.add('hidden');
   $('#letterViewport').classList.add('hidden');
+  $('#mapWrap').classList.add('hidden');
+  $('#mapWrap').classList.remove('away');
 
-  // reset envelope
+  // reset envelope, stay hidden until the map journey (if any) finishes
   const env = $('#envelope');
   env.classList.remove('open','flapback');
   $('#envFloat').classList.remove('still');
@@ -1175,8 +1453,8 @@ function startReader(d, editorPreview){
   seal.classList.remove('broken');
   seal.disabled = false;
   $('#envTo').textContent = d.to || '大切なあなたへ';
-  const wrap = $('#envWrap');
-  wrap.classList.remove('away','hidden');
+  $('#envWrap').classList.add('hidden');
+  $('#envWrap').classList.remove('away');
 
   const sheet = $('#sheet');
   sheet.classList.remove('appear','flat');
@@ -1185,6 +1463,10 @@ function startReader(d, editorPreview){
   $('#btnMute').textContent = '音を消す';
 
   seal.onclick = () => openSequence(d);
+
+  const showMap = d.mapShow && d.mapFrom !== d.mapTo;
+  if (showMap) playMapJourney(d, my);
+  else revealEnvelope(d);
 }
 
 async function openSequence(d){
@@ -1339,6 +1621,7 @@ function finishWriting(my){
 
 /* --- reader controls --- */
 function bindReaderUI(){
+  $('#mapSkip').onclick = () => { mapFfwd = true; };
   $('#btnSkip').onclick = () => { ffwd = true; if (_waiter) _waiter(); };
   $('#btnMute').onclick = () => {
     Sound.enabled = !Sound.enabled;
@@ -1366,6 +1649,7 @@ function bindReaderUI(){
 function closeReader(){
   stopBgm();
   ensureEditor();
+  $('#mapWrap').classList.add('hidden');
   $('#stage').classList.add('hidden');
   $('#editor').classList.remove('hidden');
   document.body.style.overflow = '';
